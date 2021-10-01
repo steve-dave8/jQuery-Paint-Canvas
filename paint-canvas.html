@@ -23,12 +23,14 @@
         }
 
         button.clear,
-        button.erase {
-            margin-left: 5rem;
+        button.erase,
+        button.paint {
+            margin-left: 2rem;
         }
 
         div.grid {
             width: 1330px;
+            cursor: url(paint-brush.svg) 0 20, crosshair;
         }
 
         .grid span {
@@ -41,12 +43,15 @@
         .filled {
             background:#000000;
         }
+        .active {
+            background-color: #37c646;
+        }
     </style>  
 </head>
 <body>
     <header>
         <h1>Paint Canvas</h1>
-        <p><strong>Instructions:</strong> to change the size of grid squares, input a number between 5 and 50 then click submit (it's recommended to do this before you start drawing). A smaller number will give more finer detail when painting. To change the paint color, use the color picker then click submit. Click once in the grid to start painting. Click a second time to stop painting. Similarly for using the eraser but click the eraser button first.
+        <p><strong>Instructions:</strong> to change the size of grid squares, input a number between 5 and 50 then click submit (it's recommended to do this before you start drawing). A smaller number will give more finer detail when painting. To change the paint color, use the color picker then click submit. 
         </p>
         <form onsubmit="return false">
             <label for="paint-color">Color: </label>
@@ -55,6 +60,7 @@
             <input id="grid-size" type="number" min="5" max="50" step="1" placeholder="20">
             <input type="submit">
         </form>
+        <button class="paint active" type="button">Paint</button> 
         <button class="erase" type="button">Eraser</button> 
         <button class="clear" type="button">Clear All</button>       
     </header>
@@ -93,33 +99,58 @@
             return filledClass;    
         });
         //Button functions:
+        let setting = "paint";
         $(".erase").click(function (){
             $(".grid").css("cursor", "cell");
+            setting = "erase";
+            $(this).addClass("active");
+            $(".paint").removeClass("active");
+        });
+        $(".paint").click(function (){
+            $(".grid").css("cursor", "url(paint-brush.svg) 0 20, crosshair");
+            setting = "paint";
+            $(this).addClass("active");
+            $(".erase").removeClass("active");
         });
         $(".clear").click(function (){
             $(".grid span").removeClass();
         });
-        //Painting and erasing functionality:
-        $(".grid").on("mousedown", function (){
-            if ($(".grid").css("cursor") == "cell") {
-                $(".grid span").hover(function (){
-                    $(this).removeClass();
-                    $(this).click(function (){
-                        $(".grid").css("cursor", "default");
-                        $(".grid span").off();
-                    });
-                });
-            } else {
-                $(".grid").css("cursor", "url(paint-brush.svg) 0 20, crosshair");
-                $(".grid span").hover(function (){
-                    $(this).addClass(filledClass);
-                    $(this).click(function (){
-                        $(".grid").css("cursor", "default");
-                        $(".grid span").off();
-                    });
-                });
+        //Painting and erasing functionality: 
+        let isDrawing = false;
+
+        function debounce(func, wait = 5, immediate = true) {
+            var timeout;
+            return function() {
+                var context = this, args = arguments;
+                var later = function() {
+                    timeout = null;
+                    if (!immediate) func.apply(context, args);
+                };
+                var callNow = immediate && !timeout;
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+                if (callNow) func.apply(context, args);
             };
-        });        
+        }; //function to try to improve performance
+
+        $(".grid").on("mousedown", function (){isDrawing = true});
+
+        $(".grid").on("mousemove", debounce(function (e){
+            if (isDrawing) {
+                switch(setting){
+                    case "erase":
+                        $(e.target).removeClass();
+                        break;
+                    case "paint": 
+                        $(e.target).addClass(filledClass);
+                        break;
+                }
+            };
+        }));
+
+        $(".grid").on("mouseup", function (){isDrawing = false});
+
+        $(".grid").on("mouseleave", function (){isDrawing = false});
     });
   </script>
 
